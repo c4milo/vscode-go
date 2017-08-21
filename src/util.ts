@@ -215,8 +215,7 @@ export function isGoPathSet(): boolean {
 	if (!getCurrentGoPath()) {
 		vscode.window.showInformationMessage('Set GOPATH environment variable and restart VS Code or set GOPATH in Workspace settings', 'Set GOPATH in Workspace Settings').then(selected => {
 			if (selected === 'Set GOPATH in Workspace Settings') {
-				let settingsFilePath = path.join(vscode.workspace.rootPath, '.vscode', 'settings.json');
-				vscode.commands.executeCommand('vscode.open', vscode.Uri.file(settingsFilePath));
+				vscode.commands.executeCommand('workbench.action.openWorkspaceSettings');
 			}
 		});
 		return false;
@@ -251,8 +250,10 @@ export function isPositionInString(document: vscode.TextDocument, position: vsco
 export function getToolsGopath(): string {
 	let goConfig = vscode.workspace.getConfiguration('go');
 	let toolsGopath = goConfig['toolsGopath'];
+	let root = vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath;
+
 	if (toolsGopath) {
-		toolsGopath = resolvePath(toolsGopath, vscode.workspace.rootPath);
+		toolsGopath = resolvePath(toolsGopath, root);
 	}
 	return toolsGopath;
 }
@@ -306,19 +307,24 @@ export function getToolsEnvVars(): any {
 
 export function getCurrentGoPath(): string {
 	let inferredGopath = getInferredGopath();
-	let configGopath = vscode.workspace.getConfiguration('go')['gopath'];
-	return inferredGopath ? inferredGopath : (configGopath ? resolvePath(configGopath, vscode.workspace.rootPath) : process.env['GOPATH']);
+	let configGopath = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['gopath'];
+	let root = vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath;
+
+	return inferredGopath ? inferredGopath : (configGopath ? resolvePath(configGopath, root) : process.env['GOPATH']);
 }
 
 function getInferredGopath(): string {
-	let inferGoPath = vscode.workspace.getConfiguration('go')['inferGopath'];
+
+	let inferGoPath = vscode.workspace.getConfiguration('go', vscode.window.activeTextEditor ? vscode.window.activeTextEditor.document.uri : null)['inferGopath'];
+	let root = vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath;
+
 	if (inferGoPath) {
-		let dirs = vscode.workspace.rootPath.toLowerCase().split(path.sep);
+		let dirs = root.toLowerCase().split(path.sep);
 		// find src directory closest to workspace root
 		let srcIdx = dirs.lastIndexOf('src');
 
 		if (srcIdx > 0) {
-			return vscode.workspace.rootPath.substr(0, dirs.slice(0, srcIdx).join(path.sep).length);
+			return root.substr(0, dirs.slice(0, srcIdx).join(path.sep).length);
 		}
 	}
 }

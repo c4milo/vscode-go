@@ -132,7 +132,7 @@ export function testCurrentPackage(goConfig: vscode.WorkspaceConfiguration, args
 export function testWorkspace(goConfig: vscode.WorkspaceConfiguration, args: any) {
 	goTest({
 		goConfig: goConfig,
-		dir: vscode.workspace.rootPath,
+		dir: vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath,
 		flags: getTestFlags(goConfig, args),
 		includeSubDirectories: true
 	}).then(null, err => {
@@ -147,7 +147,7 @@ export function getTestEnvVars(config: vscode.WorkspaceConfiguration): any {
 	let fileEnv = {};
 	let testEnvFile = config['testEnvFile'];
 	if (testEnvFile) {
-		testEnvFile = resolvePath(testEnvFile, vscode.workspace.rootPath);
+		testEnvFile = resolvePath(testEnvFile, vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath);
 		try {
 			fileEnv = parseEnvFile(testEnvFile);
 		} catch (e) {
@@ -336,7 +336,7 @@ function targetArgs(testconfig: TestConfig): Thenable<Array<string>> {
 			return resolve(args);
 		});
 	} else if (testconfig.includeSubDirectories) {
-		return getNonVendorPackages(vscode.workspace.rootPath);
+		return getNonVendorPackages(vscode.window.activeTextEditor ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri).uri.fsPath : vscode.workspace.rootPath);
 	}
 	return Promise.resolve([]);
 }
